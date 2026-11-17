@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          Int          @id @default(autoincrement())
+  username    String       @unique
+  email       String       @unique
+  password    String
+  displayName String?
+  bio         String?
+  avatarUrl   String?
+  lastSeen    DateTime     @default(now())
+  createdAt   DateTime     @default(now())
+  memberships ChatMember[]
+  messages    Message[]
+}
+
+// A direct message is a Chat with isGroup = false and two members.
+model Chat {
+  id        Int          @id @default(autoincrement())
+  name      String?
+  isGroup   Boolean      @default(false)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  members   ChatMember[]
+  messages  Message[]
+}
+
+model ChatMember {
+  userId Int
+  chatId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chat   Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@id([userId, chatId])
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  content   String?
+  imageUrl  String?
+  createdAt DateTime @default(now())
+  senderId  Int
+  chatId    Int
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@index([chatId, createdAt])
+}
